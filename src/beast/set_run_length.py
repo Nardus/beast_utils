@@ -1,7 +1,5 @@
 # Update the run length and log frequency througout a BEAST xml file.
 
-from lxml import objectify
-
 
 def set_run_length(xml_root, run_length, n_samples=10000):
     """
@@ -23,12 +21,12 @@ def set_run_length(xml_root, run_length, n_samples=10000):
     
     # Update <mcmc> element:
     mcmc = xml_root.mcmc
-    mcmc.set('chainLength', str(run_length))
+    mcmc.set("chainLength", str(run_length))
     
     # Update all <log> elements:
     for log in mcmc.iterchildren("log"):
-        log.set('logEvery', str(log_frequency))
+        log.set("logEvery", str(log_frequency))
     
     # Update all <logTree> elements:
     for log in mcmc.iterchildren("logTree"):
-        log.set('logEvery', str(log_frequency))
+        log.set("logEvery", str(log_frequency))

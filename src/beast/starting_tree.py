@@ -23,7 +23,7 @@ def _get_rescaled_tree(xml_root, id="startingTree"):
     xml.etree.ElementTree.Element
         The xml element for the tree block.
     """
-    for tree in xml_root.findall('rescaledTree'):
+    for tree in xml_root.findall("rescaledTree"):
         if tree.get("id") == id:
             return tree
                 

@@ -1,9 +1,12 @@
 # Add or replace taxon attributes in a BEAST xml file
 
+import numpy as np
+
+from warnings import warn
 from lxml import objectify
 
 
-def add_data_type(xml_root, attribute_name):
+def _add_data_type(xml_root, attribute_name):
     """
     Add a <generalDataType> block to a BEAST xml file.
     
@@ -47,13 +50,124 @@ def add_data_type(xml_root, attribute_name):
     return datatype
 
 
-def add_taxon_attribute(xml_root, taxon_id, attribute_name, attribute_value):
+def _update_data_type(xml_root, attribute_name):
     """
-    Add or replace a taxon attribute block in a BEAST xml file.
+    Update a <generalDataType> block in a BEAST xml file. If no <generalDataType> block exists
+    for this attribute, it will be added. 
+    
+    This function will completely replace all <state> blocks in the <generalDataType> block to
+    reflect unique attribute values currently present in the XML. This means that any XML elements
+    which rely on the order of states in the <generalDataType> will be out of date.
+    
+    Note that finding all observed values requires iterating over all taxa, so this function 
+    should be used sparingly (e.g., after all states have been added to the XML)
+    
+    Note that `xml_root` is modified in place, but the <generalDataType> block will be returned
+    to allow for further modification.
+    
+    Parameters
+    ----------
+    xml_root : lxml.objectify.ObjectifiedElement
+        Root of a BEAST xml, parsed using the lxml.objectify parser.
+    attribute_name : str
+        Name of the attribute (e.g. "location").
+    
+    Returns
+    -------
+    lxml.objectify.ObjectifiedElement
+    """
+    # Collect all observed states (order does not matter)
+    attribute_values = set()
+    
+    for taxon in xml_root.taxa.iterchildren("taxon"):
+        attr = taxon.find(f"attr[@name='{attribute_name}']")
+        
+        attribute_values.add(attr.text.strip())
+    
+    attribute_values = sorted(attribute_values)
+    
+    # Find or create the relevant <generalDataType> block
+    datatype_id = f"{attribute_name}.dataType"
+    datatype = xml_root.find(f"generalDataType[@id='{datatype_id}']")
+    
+    if datatype is None:
+        datatype = _add_data_type(xml_root, attribute_name)
+    
+    # Replace all <state> blocks
+    for state in datatype.iterchildren("state"):
+        datatype.remove(state)
+        
+    for value in attribute_values:
+        objectify.SubElement(datatype, "state", {"code": value})
+        
+    return datatype
+
+
+def _update_markov_jumps_tree_likelihood(xml_root, attribute_name, n_states):
+    """
+    Update the <markovJumpsTreeLikelihood> block in a BEAST xml file (if present). This function
+    will update the "{attribute_name}.count" parameter to reflect the order of states in an XML, 
+    but cannot update parameters pointing to transitions between specific states - XMLs should log 
+    the complete jump history instead. 
+    
+    `xml_root` is modified in place.
+    
+    Parameters
+    ----------
+    xml_root : lxml.objectify.ObjectifiedElement
+        Root of a BEAST xml, parsed using the lxml.objectify parser.
+    attribute_name : str
+        Name of an attribute (e.g. "location").
+    n_states : int
+        Number of unique states observed for this attribute.
+    
+    Returns
+    -------
+    None
+    """
+    # Expected names
+    likelihood_id = f"{attribute_name}.treeLikelihood"
+    param_id = f"{attribute_name}.count"
+    
+    # Find the relevant <markovJumpsTreeLikelihood> block
+    likelihood = xml_root.find(f"markovJumpsTreeLikelihood[@id='{likelihood_id}']")
+    
+    if likelihood is None:
+        warn(f"No markovJumpsTreeLikelihood block with ID {likelihood_id} found. Skipping update.",
+             stacklevel=3, category=RuntimeWarning)
+        return
+    
+    # Check available parameters
+    params = {p.get("id"): p for p in likelihood.iterchildren("parameter")}
+    
+    if (param_id in params and len(params) > 1) or (param_id not in params and len(params) > 0):
+        warn(f"markovJumpsTreeLikelihood contains parameters which cannot be updated to reflect "
+             "newly-added attribute state(s).", stacklevel=3, category=RuntimeWarning)
+    
+    if param_id not in params:
+        warn(f"markovJumpsTreeLikelihood with id {likelihood_id} has no '{param_id}' parameter. "
+             "Skipping update.", stacklevel=3, category=RuntimeWarning)
+        return
+    
+    # Update overall jump count parameter to match current number of states
+    indicator_vals = np.ones((n_states, n_states), dtype=float)
+    np.fill_diagonal(indicator_vals, 0.0)
+    
+    indicator_vals = indicator_vals.astype(str).flatten().tolist()
+    indicator_vals = " " + " ".join(indicator_vals)  # Must have a leading space character
+    
+    params[param_id].set("value", indicator_vals)
+
+
+
+def add_taxon_attribute(xml_root, taxon_id, attribute_name, attribute_value, 
+                        update_other_blocks=True):
+    """
+    Add or replace a taxon attribute block for a single taxon in a BEAST XML.
     
     Adding an attribute involves updating both the <taxa> and <generalDataType> sections of the 
     xml. If the attribute already exists for a given taxon, it is replaced. Note that this function 
-    adds a <attribute> block (i.e., a block describing data for a taxon), and not an actual XML 
+    adds an <attribute> block (i.e., a block describing data for a taxon), and not an actual XML 
     attribute (as in <taxon atrribute_name=attribute_value>).
     
     xml_root is modified in place.
@@ -68,50 +182,38 @@ def add_taxon_attribute(xml_root, taxon_id, attribute_name, attribute_value):
         Name of the attribute (e.g. "location").
     attribute_value : str
         Value to add for this attribute.
+    update_other_blocks : bool
+        Should the <generalDataType> and <markovJumpsTreeLikelihood> blocks be updated to reflect 
+        new states? (default: True)
     """
-    # Update the <taxa> block
-    taxa = xml_root.taxa
+    # Find taxon
+    taxon = xml_root.taxa.find(f"taxon[@id='{taxon_id}']")
     
-    for taxon in taxa.iterchildren("taxon"):
-        if taxon.get("id") == taxon_id:
-            # Update (or add) the attribute
-            for attribute in taxon.iterchildren("attr"):
-                if attribute.get("name") == attribute_name:
-                    attribute._setText(attribute_value)
-                    break
-            else:
-                # Not found, so add it
-                attribute = objectify.SubElement(taxon, "attr", {"name": attribute_name})
-                attribute._setText(attribute_value)
-            
-            break
-    else:
+    if taxon is None:
         raise ValueError(f"Taxon '{taxon_id}' not found in <taxa> block.")
     
-    # Find or create the relevant <generalDataType> block
-    datatype_id = f"{attribute_name}.dataType"
+    # Add (or update) the attribute
+    attribute = taxon.find(f"attr[@name='{attribute_name}']")
     
-    for datatype in xml_root.iterchildren("generalDataType"):
-        if datatype.get("id") == datatype_id:
-            break
-    else:
-        datatype = add_data_type(xml_root, attribute_name)
+    if attribute is None:
+        attribute = objectify.SubElement(taxon, "attr", {"name": attribute_name})
     
+    attribute._setText(attribute_value)
     
-    # Add the observed value to the <generalDataType> block (if needed)
-    for state in datatype.iterchildren("state"):
-        if state.get("code") == attribute_value:
-            break
-    else:
-        objectify.SubElement(datatype, "state", {"code": attribute_value})
+    # Perform other updates if requested (useful as a safety mechananism when adding a 
+    # single attribute by calling this function directly)
+    if update_other_blocks:
+        datatype = _update_data_type(xml_root, attribute_name)
         
-    # Update <markovJumpsTreeLikelihood> with the correct number of states
-    #TODO
+        n_states = len(datatype.findall("state"))
+        _update_markov_jumps_tree_likelihood(xml_root, attribute_name, n_states)
 
 
 def add_taxon_attributes(xml_path, output_path, attribute_name, attribute_dict):
     """
-    Add or replace taxon attributes in a BEAST xml file.
+    Add or replace taxon attributes for multiple taxa in a BEAST XML file.
+    
+    See `add_taxon_attribute` for more details.
     
     Parameters
     ----------
@@ -128,8 +230,16 @@ def add_taxon_attributes(xml_path, output_path, attribute_name, attribute_dict):
     root = tree.getroot()
     
     for taxon_id, attribute_value in attribute_dict.items():
-        add_taxon_attribute(root, taxon_id, attribute_name, attribute_value)
+        add_taxon_attribute(root, taxon_id, attribute_name, attribute_value, 
+                            update_other_blocks=False)
+        
+    # Update other elements to reflect final states
+    datatype = _update_data_type(root, attribute_name)
+
+    n_states = len(datatype.findall("state"))
+    _update_markov_jumps_tree_likelihood(root, attribute_name, n_states)
     
+    # Save to file
     with open(output_path, "wb") as f:
         tree.write(
             f,

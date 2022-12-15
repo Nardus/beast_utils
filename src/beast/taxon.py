@@ -107,9 +107,10 @@ def get_alignment_block(xml_root, alignment_id, missing="-", sequence_type="nucl
         The relevant alignment block.
     """
     # Find existing alignment blocks
-    for alignment in xml_root.iterchildren("alignment"):
-        if alignment.get("id") == alignment_id:
-            return alignment
+    alignment = xml_root.find(f"alignment[@id='{alignment_id}']")
+    
+    if alignment is not None:
+        return alignment
     
     # Not found, so create a new alignment block
     alignment = xml_root.makeelement(

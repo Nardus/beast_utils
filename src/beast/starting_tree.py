@@ -23,9 +23,10 @@ def _get_rescaled_tree(xml_root, id="startingTree"):
     xml.etree.ElementTree.Element
         The xml element for the tree block.
     """
-    for tree in xml_root.findall("rescaledTree"):
-        if tree.get("id") == id:
-            return tree
+    tree = xml_root.find(f"rescaledTree[@id='{id}']")
+    
+    if tree is not None:
+        return tree
                 
     # No <rescaledTree> block found, create one
     tree = xml_root.makeelement("rescaledTree", {"id": id})
@@ -66,13 +67,13 @@ def _get_tree_model(xml_root, id="treeModel"):
     xml.etree.ElementTree.Element
         The xml element for the tree model block.
     """
-    tree_models = xml_root.findall("treeModel")
+    tree_model = xml_root.find(f"treeModel[@id='{id}']")
     
-    for tree_model in tree_models:
-        if tree_model.get("id") == id:
-            return tree_model
-    else:   
+    if tree_model is None:
         raise ValueError(f"No <treeModel> element with id '{id}' found.")
+        
+    return tree_model
+
 
 def _get_alignment_id(xml_root):
     """

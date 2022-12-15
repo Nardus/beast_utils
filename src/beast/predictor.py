@@ -27,18 +27,16 @@ def _parse_glm_specification(xml_root, model_id, datatype_id):
     tuple
         A tuple containing the <glmSubstitutionModel> block and a list of states.
     """
-    # Find the <glmSubstitutionModel> block (there may be more than one)    
-    for model_spec in xml_root.iterchildren("glmSubstitutionModel"):
-        if model_spec.attrib["id"] == model_id:
-            break
-    else:
+    # Find the <glmSubstitutionModel> block (there may be more than one)
+    model_spec = xml_root.find(f"glmSubstitutionModel[@id='{model_id}']")
+    
+    if model_spec is None:
         raise ValueError(f"No <glmSubstitutionModel> block with id '{model_id}' found.")
         
-    # Find the correct <generalDataType> block    
-    for datatype_spec in xml_root.iterchildren("generalDataType"):
-        if datatype_spec.attrib["id"] == datatype_id:
-            break
-    else:
+    # Find the correct <generalDataType> block
+    datatype_spec = xml_root.find(f"generalDataType[@id='{datatype_id}']")
+    
+    if datatype_spec is None:
         raise ValueError(f"No <generalDataType> block with id '{datatype_id}' found.")
     
     # Retrieve order of observed states

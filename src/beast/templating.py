@@ -81,7 +81,7 @@ def update_from_template(xml_path, template, output_path, before_operators=True)
     before_operators : bool, optional
         If True, new top-level elements will be added before the <operators> element. If False, 
         they will be added after the <operators> element. This argument is ignored if the template 
-        itself contains an <operators> element. Default is True.
+        itself contains an <operators> element (default: True).
 
     Returns
     -------

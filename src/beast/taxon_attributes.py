@@ -104,6 +104,9 @@ def add_taxon_attribute(xml_root, taxon_id, attribute_name, attribute_value):
             break
     else:
         objectify.SubElement(datatype, "state", {"code": attribute_value})
+        
+    # Update <markovJumpsTreeLikelihood> with the correct number of states
+    #TODO
 
 
 def add_taxon_attributes(xml_path, output_path, attribute_name, attribute_dict):

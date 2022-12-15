@@ -16,7 +16,7 @@ def _get_rescaled_tree(xml_root, id="startingTree"):
     xml_root : xml.etree.ElementTree.Element
         The root element of the xml file.
     id : str, optional
-        The id of the <rescaledTree> block to find. Default is "startingTree".
+        The id of the <rescaledTree> block to find (default: "startingTree").
     
     Returns
     -------

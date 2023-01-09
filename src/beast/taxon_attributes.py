@@ -5,6 +5,8 @@ import numpy as np
 from warnings import warn
 from lxml import objectify
 
+from .markov_jump import _update_jump_count_param
+
 
 def _add_data_type(xml_root, attribute_name):
     """
@@ -150,14 +152,7 @@ def _update_markov_jumps_tree_likelihood(xml_root, attribute_name, n_states):
         return
     
     # Update overall jump count parameter to match current number of states
-    indicator_vals = np.ones((n_states, n_states), dtype=float)
-    np.fill_diagonal(indicator_vals, 0.0)
-    
-    indicator_vals = indicator_vals.astype(str).flatten().tolist()
-    indicator_vals = " " + " ".join(indicator_vals)  # Must have a leading space character
-    
-    params[param_id].set("value", indicator_vals)
-
+    _update_jump_count_param(params[param_id], attribute_name, n_states)
 
 
 def add_taxon_attribute(xml_root, taxon_id, attribute_name, attribute_value, 

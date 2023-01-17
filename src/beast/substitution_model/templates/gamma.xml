@@ -1,0 +1,30 @@
+<!--Gamma rate variation-->
+
+<beast version="1.10.4">
+    <siteModel id="siteModel">
+        <gammaShape gammaCategories="4">
+            <parameter id="siteModel.alpha" value="0.5" lower="0.0"/>
+        </gammaShape>
+    </siteModel>
+    
+    <operators id="operators">
+        <scaleOperator scaleFactor="0.75" weight="0.1">
+            <parameter idref="siteModel.alpha"/>
+        </scaleOperator>
+    </operators>
+    
+    <mcmc id="mcmc">
+        <joint id="joint">
+            <prior id="prior">
+                <exponentialPrior mean="0.5" offset="0.0">
+                    <parameter idref="siteModel.alpha"/>
+                </exponentialPrior>
+            </prior>
+        </joint>
+    
+        <log id="fileLog">
+            <parameter idref="siteModel.alpha"/>
+        </log>
+    </mcmc>
+
+</beast>

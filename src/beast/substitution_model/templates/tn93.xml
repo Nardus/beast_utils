@@ -1,0 +1,76 @@
+<!-- The TrN substitution model (Tamura & Nei, 1993)  -->
+
+<beast version="1.10.4">
+    <gtrModel id="tn93">
+        <frequencies>
+            <frequencyModel dataType="nucleotide">
+                <frequencies>
+                    <parameter id="frequencies" value="0.25 0.25 0.25 0.25"/>
+                </frequencies>
+            </frequencyModel>
+        </frequencies>
+        <rateAC>
+            <parameter id="tn93.transversion" value="1.0" lower="0.0"/>
+        </rateAC>
+        <rateAG>
+            <parameter id="tn93.ag" value="1.0" lower="0.0"/>
+        </rateAG>
+        <rateAT>
+            <parameter idref="tn93.transversion"/>
+        </rateAT>
+        <rateCG>
+            <parameter idref="tn93.transversion"/>
+        </rateCG>
+        <rateGT>
+            <parameter idref="tn93.transversion"/>
+        </rateGT>
+    </gtrModel>
+    
+    <siteModel id="siteModel">
+        <substitutionModel>
+            <gtrModel idref="tn93"/>
+        </substitutionModel>
+        <relativeRate>
+            <parameter id="siteModel.mu" value="1.0" lower="0.0"/>
+        </relativeRate>
+    </siteModel>
+    
+    
+    <!-- Define operators                                                        -->
+    <operators id="operators">
+        <scaleOperator scaleFactor="0.75" weight="0.1">
+            <parameter idref="tn93.transversion"/>
+        </scaleOperator>
+        <scaleOperator scaleFactor="0.75" weight="0.1">
+            <parameter idref="tn93.ag"/>
+        </scaleOperator>
+        <deltaExchange delta="0.01" weight="1">
+            <parameter idref="frequencies"/>
+        </deltaExchange>
+    </operators>
+    
+    
+    <!-- Define MCMC                                                             -->
+    <mcmc id="mcmc">
+        <joint id="joint">
+            <prior id="prior">
+                <gammaPrior shape="0.05" scale="10.0" offset="0.0">
+                    <parameter idref="tn93.transversion"/>
+                </gammaPrior>
+                <gammaPrior shape="0.05" scale="10.0" offset="0.0">
+                    <parameter idref="tn93.ag"/>
+                </gammaPrior>
+                <dirichletPrior alpha="1.0" sumsTo="1.0">
+                    <parameter idref="frequencies"/>
+                </dirichletPrior>
+            </prior>
+        </joint>
+
+        <log id="fileLog">
+            <parameter idref="tn93.transversion"/>
+            <parameter idref="tn93.ag"/>
+            <parameter idref="frequencies"/>
+        </log>
+    </mcmc>
+
+</beast>

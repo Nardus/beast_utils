@@ -1,0 +1,91 @@
+<!-- The TVM (transversional) substitution model -->
+
+<beast version="1.10.4">
+    <gtrModel id="tvm">
+        <frequencies>
+            <frequencyModel dataType="nucleotide">
+                <frequencies>
+                    <parameter id="frequencies" value="0.25 0.25 0.25 0.25"/>
+                </frequencies>
+            </frequencyModel>
+        </frequencies>
+        <rateAC>
+            <parameter id="tvm.ac" value="1.0" lower="0.0"/>
+        </rateAC>
+        <rateAG>
+            <parameter id="tvm.ag" value="1.0"/>
+        </rateAG>
+        <rateAT>
+            <parameter id="tvm.at" value="1.0" lower="0.0"/>
+        </rateAT>
+        <rateCG>
+            <parameter id="tvm.cg" value="1.0" lower="0.0"/>
+        </rateCG>
+        <rateGT>
+            <parameter id="tvm.gt" value="1.0" lower="0.0"/>
+        </rateGT>
+    </gtrModel>
+
+    <!-- site model                                                              -->
+    <siteModel id="siteModel">
+        <substitutionModel>
+            <gtrModel idref="tvm"/>
+        </substitutionModel>
+        <relativeRate>
+            <parameter id="siteModel.mu" value="1.0" lower="0.0"/>
+        </relativeRate>
+    </siteModel>
+    
+    <!-- Define operators                                                        -->
+    <operators id="operators">
+        <scaleOperator scaleFactor="0.75" weight="0.1">
+            <parameter idref="tvm.ac"/>
+        </scaleOperator>
+        <scaleOperator scaleFactor="0.75" weight="0.1">
+            <parameter idref="tvm.at"/>
+        </scaleOperator>
+        <scaleOperator scaleFactor="0.75" weight="0.1">
+            <parameter idref="tvm.cg"/>
+        </scaleOperator>
+        <scaleOperator scaleFactor="0.75" weight="0.1">
+            <parameter idref="tvm.gt"/>
+        </scaleOperator>
+        <deltaExchange delta="0.01" weight="1">
+            <parameter idref="frequencies"/>
+        </deltaExchange>
+    </operators>
+    
+    
+    <!-- Define MCMC                                                             -->
+    <mcmc id="mcmc">
+        <joint id="joint">
+            <prior id="prior">
+                <gammaPrior shape="0.05" scale="10.0" offset="0.0">
+                    <parameter idref="tvm.ac"/>
+                </gammaPrior>
+                <gammaPrior shape="0.05" scale="10.0" offset="0.0">
+                    <parameter idref="tvm.at"/>
+                </gammaPrior>
+                <gammaPrior shape="0.05" scale="10.0" offset="0.0">
+                    <parameter idref="tvm.cg"/>
+                </gammaPrior>
+                <gammaPrior shape="0.05" scale="10.0" offset="0.0">
+                    <parameter idref="tvm.gt"/>
+                </gammaPrior>
+                <dirichletPrior alpha="1.0" sumsTo="1.0">
+                    <parameter idref="frequencies"/>
+                </dirichletPrior>
+            </prior>
+        </joint>
+        
+        
+        <log id="fileLog">
+            <parameter idref="tvm.ac"/>
+            <parameter idref="tvm.at"/>
+            <parameter idref="tvm.cg"/>
+            <parameter idref="tvm.gt"/>
+            <parameter idref="frequencies"/>
+        </log>
+    </mcmc>
+
+</beast>

@@ -1,6 +1,9 @@
 # Update an XML file based on a template XML
 
+from warnings import warn
+
 from lxml import objectify
+from lxml.etree import _ElementTree
 
 
 def add_element(parent, template, position=None):
@@ -52,9 +55,9 @@ def add_element(parent, template, position=None):
         add_element(existing_element, child)
 
 
-def update_from_template(xml_path, template, output_path, before_operators=True):
+def update_from_template(tree, template, before_operators=True):
     """
-    Update an XML file based on a template XML. The template XML should match the structure 
+    Update an XML tree based on a template XML. The template XML should match the structure 
     of the XML to be updated, which determines where new elements are added. Note that existing 
     elements will cannot be changed. 
     
@@ -69,15 +72,15 @@ def update_from_template(xml_path, template, output_path, before_operators=True)
     `<beast>` tag, in which any new elements before or after the <operators> element will retain 
     this position. If the template contains no <operators> tag, use the `before_operators` 
     argument to specify where new top-level elements should be added.
+    
+    `tree` is modified in place.
 
     Parameters
     ----------
-    xml_path : str
-        Path to the XML file to be updated.
-    template : str
-        Path to the template XML file.
-    output_path : str
-        Path to use for output. If the file already exists, it will be overwritten.
+    tree : lxml.etree.ElementTree
+        XML tree to be updated.
+    template : lxml.etree.ElementTree or str
+        Either an existing lxml object or a path to the template XML file.
     before_operators : bool, optional
         If True, new top-level elements will be added before the <operators> element. If False, 
         they will be added after the <operators> element. This argument is ignored if the template 
@@ -85,16 +88,22 @@ def update_from_template(xml_path, template, output_path, before_operators=True)
 
     Returns
     -------
-    None
+    lxml.etree.ElementTree
+        The updated XML tree.
     """
-    # Read XML files
-    parser = objectify.makeparser(remove_blank_text=True)
-    tree = objectify.parse(xml_path, parser=parser)
+    if not isinstance(tree, _ElementTree):
+        raise ValueError("tree is not an lxml.etree._ElementTree object.")
+    
     root = tree.getroot()
     
-    parser = objectify.makeparser(remove_blank_text=True, remove_comments=True)
-    template_tree = objectify.parse(template, parser=parser)
-    template_root = template_tree.getroot()
+    # Read template
+    if isinstance(template, str):
+        parser = objectify.makeparser(remove_blank_text=True, remove_comments=True)
+        template_tree = objectify.parse(template, parser=parser)
+        template_root = template_tree.getroot()
+    else:
+        template_tree = template
+        template_root = template_tree.getroot()
     
     # Check outer tags
     if root.tag != "beast":
@@ -132,11 +141,4 @@ def update_from_template(xml_path, template, output_path, before_operators=True)
         
         add_element(root, child)
     
-    # Write output
-    with open(output_path, "wb") as f:
-        tree.write(
-            f, 
-            pretty_print=True, 
-            encoding="utf-8",
-            doctype='<?xml version="1.0" standalone="yes"?>'
-        )
+    return tree

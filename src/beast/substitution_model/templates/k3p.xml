@@ -1,0 +1,68 @@
+<!-- The K3P "3-parameter" substitution model (Kimura, 1981) -->
+
+<beast version="1.10.4">
+    <gtrModel id="k3p">
+        <frequencies>
+            <frequencyModel dataType="nucleotide">
+                <frequencies>
+                    <parameter id="frequencies" value="0.25 0.25 0.25 0.25"/>
+                </frequencies>
+            </frequencyModel>
+        </frequencies>
+        <rateAC>
+            <parameter id="k3p.purine2pyrimidine" value="1.0" lower="0.0"/>
+        </rateAC>
+        <rateAG>
+            <parameter id="k3p.ag" value="1.0"/>
+        </rateAG>
+        <rateAT>
+            <parameter id="k3p.pyrimidine2purine" value="1.0" lower="0.0"/>
+        </rateAT>
+        <rateCG>
+            <parameter idref="k3p.pyrimidine2purine"/>
+        </rateCG>
+        <rateGT>
+            <parameter idref="k3p.purine2pyrimidine"/>
+        </rateGT>
+    </gtrModel>
+    
+    <siteModel id="siteModel">
+        <substitutionModel>
+            <gtrModel idref="k3p"/>
+        </substitutionModel>
+        <relativeRate>
+            <parameter id="siteModel.mu" value="1.0" lower="0.0"/>
+        </relativeRate>
+    </siteModel>
+    
+    <!-- Define operators                                                        -->
+    <operators id="operators">
+        <scaleOperator scaleFactor="0.75" weight="0.1">
+            <parameter idref="k3p.purine2pyrimidine"/>
+        </scaleOperator>
+        <scaleOperator scaleFactor="0.75" weight="0.1">
+            <parameter idref="k3p.pyrimidine2purine"/>
+        </scaleOperator>
+    </operators>
+    
+    <!-- Define MCMC                                                             -->
+    <mcmc id="mcmc">
+        <joint id="joint">
+            <prior id="prior">
+                <gammaPrior shape="0.05" scale="10.0" offset="0.0">
+                    <parameter idref="k3p.purine2pyrimidine"/>
+                </gammaPrior>
+                <gammaPrior shape="0.05" scale="10.0" offset="0.0">
+                    <parameter idref="k3p.pyrimidine2purine"/>
+                </gammaPrior>
+            </prior>
+        </joint>
+    
+        <log id="fileLog">
+            <parameter idref="k3p.purine2pyrimidine"/>
+            <parameter idref="k3p.pyrimidine2purine"/>
+            <parameter idref="frequencies"/>
+        </log>
+    </mcmc>
+
+</beast>

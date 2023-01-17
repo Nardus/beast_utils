@@ -1,0 +1,60 @@
+<!-- The F81 substitution model (Felsenstein, 1981) -->
+
+<beast version="1.10.4">
+    <gtrModel id="f81">
+        <frequencies>
+            <frequencyModel dataType="nucleotide">
+                <frequencies>
+                    <parameter id="frequencies" value="0.25 0.25 0.25 0.25"/>
+                </frequencies>
+            </frequencyModel>
+        </frequencies>
+        <rateAC>
+            <parameter id="f81.ac" value="1.0"/>
+        </rateAC>
+        <rateAG>
+            <parameter id="f81.ag" value="1.0"/>
+        </rateAG>
+        <rateAT>
+            <parameter id="f81.at" value="1.0"/>
+        </rateAT>
+        <rateCG>
+            <parameter id="f81.cg" value="1.0"/>
+        </rateCG>
+        <rateGT>
+            <parameter id="f81.gt" value="1.0"/>
+        </rateGT>
+    </gtrModel>
+    
+    <siteModel id="siteModel">
+        <substitutionModel>
+            <gtrModel idref="f81"/>
+        </substitutionModel>
+        <relativeRate>
+            <parameter id="siteModel.mu" value="1.0" lower="0.0"/>
+        </relativeRate>
+    </siteModel>
+    
+    <!-- Define operators                                                        -->
+    <operators id="operators">
+        <deltaExchange delta="0.01" weight="0.1">
+            <parameter idref="frequencies"/>
+        </deltaExchange>
+    </operators>
+    
+    <!-- Define MCMC                                                             -->
+    <mcmc id="mcmc">
+        <joint id="joint">
+            <prior id="prior">
+                <dirichletPrior alpha="1.0" sumsTo="1.0">
+                    <parameter idref="frequencies"/>
+                </dirichletPrior>
+            </prior>
+        </joint>
+
+        <log id="fileLog">
+            <parameter idref="frequencies"/>
+        </log>
+    </mcmc>
+
+</beast>

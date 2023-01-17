@@ -1,0 +1,25 @@
+<!--Estimated (i.e. optimised) base frequencies-->
+<!--Note: prior is Dirichlet(1,1). This matches the default used by BEAUTI, but differs from the 
+    Uniform(0, 1) used at http://beast.community/custom_substitution_models-->
+
+<beast version="1.10.4">
+    <operators id="operators">
+        <deltaExchange delta="0.01" weight="0.1">
+            <parameter idref="frequencies"/>
+        </deltaExchange>
+    </operators>
+
+    <mcmc id="mcmc">
+        <joint id="joint">
+            <prior id="prior">
+                <dirichletPrior alpha="1.0" sumsTo="1.0">
+                    <parameter idref="frequencies"/>
+                </dirichletPrior>
+            </prior>
+        </joint>
+        
+        <log id="fileLog">
+            <parameter idref="frequencies"/>
+        </log>
+    </mcmc>
+</beast>

@@ -1,0 +1,80 @@
+<!-- The TIM (transitional) substitution model -->
+
+<beast version="1.10.4">
+    <gtrModel id="tim">
+        <frequencies>
+            <frequencyModel dataType="nucleotide">
+                <frequencies>
+                    <parameter id="frequencies" value="0.25 0.25 0.25 0.25"/>
+                </frequencies>
+            </frequencyModel>
+        </frequencies>
+        <rateAC>
+            <parameter id="tim.purine2pyrimidine" value="1.0" lower="0.0"/>
+        </rateAC>
+        <rateAG>
+            <parameter id="tim.ag" value="1.0" lower="0.0"/>
+        </rateAG>
+        <rateAT>
+            <parameter id="tim.pyrimidine2purine" value="1.0" lower="0.0"/>
+        </rateAT>
+        <rateCG>
+            <parameter idref="tim.pyrimidine2purine"/>
+        </rateCG>
+        <rateGT>
+            <parameter idref="tim.purine2pyrimidine"/>
+        </rateGT>
+    </gtrModel>
+    
+    <siteModel id="siteModel">
+        <substitutionModel>
+            <gtrModel idref="tim"/>
+        </substitutionModel>
+        <relativeRate>
+            <parameter id="siteModel.mu" value="1.0" lower="0.0"/>
+        </relativeRate>
+    </siteModel>
+    
+    
+    <!-- Define operators                                                        -->
+    <operators id="operators">
+        <scaleOperator scaleFactor="0.75" weight="0.1">
+            <parameter idref="tim.purine2pyrimidine"/>
+        </scaleOperator>
+        <scaleOperator scaleFactor="0.75" weight="0.1">
+            <parameter idref="tim.ag"/>
+        </scaleOperator>
+        <scaleOperator scaleFactor="0.75" weight="0.1">
+            <parameter idref="tim.pyrimidine2purine"/>
+        </scaleOperator>
+        <deltaExchange delta="0.01" weight="0.1">
+            <parameter idref="frequencies"/>
+        </deltaExchange>
+    </operators>
+
+
+    <!-- Define MCMC                                                             -->
+    <mcmc id="mcmc">
+        <joint id="joint">
+            <prior id="prior">
+                <gammaPrior shape="0.05" scale="10.0" offset="0.0">
+                    <parameter idref="tim.purine2pyrimidine"/>
+                </gammaPrior>
+                <gammaPrior shape="0.05" scale="10.0" offset="0.0">
+                    <parameter idref="tim.ag"/>
+                </gammaPrior>
+                <dirichletPrior alpha="1.0" sumsTo="1.0">
+                    <parameter idref="frequencies"/>
+                </dirichletPrior>
+            </prior>
+        </joint>
+
+        <log id="fileLog">
+            <parameter idref="tim.purine2pyrimidine"/>
+            <parameter idref="tim.ag"/>
+            <parameter idref="tim.pyrimidine2purine"/>
+            <parameter idref="frequencies"/>
+        </log>
+    </mcmc>
+
+</beast>

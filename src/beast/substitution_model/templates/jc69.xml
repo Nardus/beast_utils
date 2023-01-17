@@ -1,0 +1,47 @@
+<!-- The JC69 substitution model (Jukes & Cantor, 1969) -->
+
+<beast version="1.10.4">
+    <gtrModel id="jc69">
+        <frequencies>
+            <frequencyModel dataType="nucleotide">
+                <frequencies>
+                    <parameter id="frequencies" value="0.25 0.25 0.25 0.25"/>
+                </frequencies>
+            </frequencyModel>
+        </frequencies>
+        <rateAC>
+            <parameter id="jc69.ac" value="1.0"/>
+        </rateAC>
+        <rateAG>
+            <parameter id="jc69.ag" value="1.0"/>
+        </rateAG>
+        <rateAT>
+            <parameter id="jc69.at" value="1.0"/>
+        </rateAT>
+        <rateCG>
+            <parameter id="jc69.cg" value="1.0"/>
+        </rateCG>
+        <rateGT>
+            <parameter id="jc69.gt" value="1.0"/>
+        </rateGT>
+    </gtrModel>
+    
+    <siteModel id="siteModel_Gene1">
+        <substitutionModel>
+            <gtrModel idref="jc69"/>
+        </substitutionModel>
+        <relativeRate>
+            <parameter id="jc69.mu" value="1.0" lower="0.0"/>
+        </relativeRate>
+    </siteModel>
+    
+    <!-- Define operators                                                        -->
+    
+    <!-- Define MCMC                                                             -->
+    <mcmc id="mcmc">
+        <log id="fileLog">
+            <parameter idref="frequencies"/>
+        </log>
+    </mcmc>
+
+</beast>

@@ -1,0 +1,51 @@
+<!-- The K80 substitution model (Kimura, 1980) -->
+
+<beast version="1.10.4">
+    <hkyModel id="k80">
+        <frequencies>
+            <frequencyModel dataType="nucleotide">
+                <frequencies>
+                    <parameter id="frequencies" value="0.25 0.25 0.25 0.25"/>
+                </frequencies>
+            </frequencyModel>
+        </frequencies>
+        <kappa>
+            <parameter id="k80.kappa" value="1.0" lower="0.0"/>
+        </kappa>
+    </hkyModel>
+    
+    <siteModel id="siteModel">
+        <substitutionModel>
+            <hkyModel idref="k80"/>
+        </substitutionModel>
+        <relativeRate>
+            <parameter id="siteModel.mu" value="1.0" lower="0.0" upper="10000.0"/>
+        </relativeRate>
+    </siteModel>
+    
+    
+    <!-- Define operators                                                        -->
+    <operators id="operators">
+        <scaleOperator scaleFactor="0.75" weight="0.1">
+            <parameter idref="k80.kappa"/>
+        </scaleOperator>
+    </operators>
+    
+    
+    <!-- Define MCMC                                                             -->
+    <mcmc id="mcmc">
+        <joint id="joint">
+            <prior id="prior">
+                <logNormalPrior mean="1.0" stdev="1.25" offset="0.0" meanInRealSpace="false">
+                    <parameter idref="k80.kappa"/>
+                </logNormalPrior>
+            </prior>
+        </joint>
+
+        <log id="fileLog">
+            <parameter idref="k80.kappa"/>
+            <parameter idref="frequencies"/>
+        </log>
+    </mcmc>
+
+</beast>

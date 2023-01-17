@@ -1,0 +1,91 @@
+<!-- The SYM (symmetrical) substitution model (Zharkikh, 1994) -->
+
+<beast version="1.10.4">
+    <gtrModel id="sym">
+        <frequencies>
+            <frequencyModel dataType="nucleotide">
+                <frequencies>
+                    <parameter id="frequencies" value="0.25 0.25 0.25 0.25"/>
+                </frequencies>
+            </frequencyModel>
+        </frequencies>
+        <rateAC>
+            <parameter id="sym.ac" value="1.0" lower="0.0"/>
+        </rateAC>
+        <rateAG>
+            <parameter id="sym.ag" value="1.0" lower="0.0"/>
+        </rateAG>
+        <rateAT>
+            <parameter id="sym.at" value="1.0" lower="0.0"/>
+        </rateAT>
+        <rateCG>
+            <parameter id="sym.cg" value="1.0" lower="0.0"/>
+        </rateCG>
+        <rateGT>
+            <parameter id="sym.gt" value="1.0" lower="0.0"/>
+        </rateGT>
+    </gtrModel>
+    
+    <siteModel id="siteModel">
+        <substitutionModel>
+            <gtrModel idref="sym"/>
+        </substitutionModel>
+        <relativeRate>
+            <parameter id="siteModel.mu" value="1.0" lower="0.0"/>
+        </relativeRate>
+    </siteModel>
+    
+    
+    <!-- Define operators                                                        -->
+    <operators id="operators">
+        <scaleOperator scaleFactor="0.75" weight="0.1">
+            <parameter idref="sym.ac"/>
+        </scaleOperator>
+        <scaleOperator scaleFactor="0.75" weight="0.1">
+            <parameter idref="sym.ag"/>
+        </scaleOperator>
+        <scaleOperator scaleFactor="0.75" weight="0.1">
+            <parameter idref="sym.at"/>
+        </scaleOperator>
+        <scaleOperator scaleFactor="0.75" weight="0.1">
+            <parameter idref="sym.cg"/>
+        </scaleOperator>
+        <scaleOperator scaleFactor="0.75" weight="0.1">
+            <parameter idref="sym.gt"/>
+        </scaleOperator>
+    </operators>
+    
+    
+    <!-- Define MCMC                                                             -->
+    <mcmc id="mcmc">
+        <joint id="joint">
+            <prior id="prior">
+                <gammaPrior shape="0.05" scale="10.0" offset="0.0">
+                    <parameter idref="sym.ac"/>
+                </gammaPrior>
+                <gammaPrior shape="0.05" scale="10.0" offset="0.0">
+                    <parameter idref="sym.ag"/>
+                </gammaPrior>
+                <gammaPrior shape="0.05" scale="10.0" offset="0.0">
+                    <parameter idref="sym.at"/>
+                </gammaPrior>
+                <gammaPrior shape="0.05" scale="10.0" offset="0.0">
+                    <parameter idref="sym.cg"/>
+                </gammaPrior>
+                <gammaPrior shape="0.05" scale="10.0" offset="0.0">
+                    <parameter idref="sym.gt"/>
+                </gammaPrior>
+            </prior>
+        </joint>
+        
+        <log id="fileLog">
+            <parameter idref="sym.ac"/>
+            <parameter idref="sym.ag"/>
+            <parameter idref="sym.at"/>
+            <parameter idref="sym.cg"/>
+            <parameter idref="sym.gt"/>
+            <parameter idref="frequencies"/>
+        </log>
+    </mcmc>
+
+</beast>

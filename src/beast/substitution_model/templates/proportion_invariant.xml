@@ -1,0 +1,32 @@
+<!--A proportion of invariant sites (+I)-->
+
+<beast version="1.10.4">
+    <siteModel id="siteModel">
+        <proportionInvariant>
+            <parameter id="siteModel.pInv" value="0.25" lower="0.0"/>
+        </proportionInvariant>
+    </siteModel>
+    
+    <operators id="operators">
+        <scaleOperator scaleFactor="0.75" weight="0.1">
+            <parameter idref="siteModel.pInv"/>
+        </scaleOperator>
+    </operators>
+    
+    <mcmc id="mcmc">
+        <joint id="joint">
+            <prior id="prior">
+                <uniformPrior lower="0.0" upper="1.0">
+                    <parameter idref="siteModel.pInv"/>
+                </uniformPrior>
+            </prior>
+        </joint>
+        
+        <log id="fileLog">
+            <parameter idref="siteModel.pInv"/>
+        </log>
+    </mcmc>
+
+</beast>
+
+

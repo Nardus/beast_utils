@@ -1,0 +1,57 @@
+<!-- The HKY substitution model (Hasegawa, Kishino & Yano, 1985)             -->
+
+<beast version="1.10.4">
+    <HKYModel id="hky">
+        <frequencies>
+            <frequencyModel dataType="nucleotide">
+                <frequencies>
+                    <parameter id="frequencies" value="0.25 0.25 0.25 0.25"/>
+                </frequencies>
+            </frequencyModel>
+        </frequencies>
+        <kappa>
+            <parameter id="kappa" value="2.0" lower="0.0"/>
+        </kappa>
+    </HKYModel>
+    
+    <siteModel id="siteModel">
+        <substitutionModel>
+            <HKYModel idref="hky"/>
+        </substitutionModel>
+        <relativeRate>
+            <parameter id="siteModel.mu" value="1.0" lower="0.0"/>
+        </relativeRate>
+    </siteModel>
+    
+    
+    <!-- Define operators                                                        -->
+    <operators id="operators">
+        <scaleOperator scaleFactor="0.75" weight="1">
+            <parameter idref="kappa"/>
+        </scaleOperator>
+        <deltaExchange delta="0.01" weight="1">
+            <parameter idref="frequencies"/>
+        </deltaExchange>
+    </operators>
+    
+    
+    <!-- Define MCMC                                                             -->
+    <mcmc id="mcmc">
+        <joint id="joint">
+            <prior id="prior">
+                <logNormalPrior mu="1.0" sigma="1.25" offset="0.0" meanInRealSpace="false">
+                    <parameter idref="kappa"/>
+                </logNormalPrior>
+                <dirichletPrior alpha="1.0" sumsTo="1.0">
+                    <parameter idref="frequencies"/>
+                </dirichletPrior>
+            </prior>
+        </joint>
+        
+        <log id="fileLog">
+            <parameter idref="kappa"/>
+            <parameter idref="frequencies"/>
+        </log>
+    </mcmc>
+
+</beast>

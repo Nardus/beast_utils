@@ -1,5 +1,7 @@
 # Add a new taxon and sequence to a BEAST xml file.
 
+from warnings import warn
+
 from lxml import objectify
 
 
@@ -85,10 +87,13 @@ def add_taxon_block(xml_root, taxon_id, date, direction="forwards", units="years
     objectify.SubElement(taxon, "date", {"value": str(date), "direction": direction, "units": units})
 
 
-def get_alignment_block(xml_root, alignment_id, missing="-", sequence_type="nucleotide"):
+def get_alignment_block(xml_root, alignment_id, missing="-", sequence_type="nucleotide",
+                        tree_data_likelihood_id="treeLikelihood"):
     """
     Get an alignment block from a BEAST xml. If the alignment block does not exist, it will be
-    created and inserted into `xml_root` (modified in place).
+    created and inserted into `xml_root` (modified in place). If a <treeDataLikelihood> element 
+    matching `tree_data_likelihood_id` is present, the new alignment will be registered with it. 
+    Otherwise, a warning is issued.
     
     Parameters
     ----------
@@ -100,6 +105,9 @@ def get_alignment_block(xml_root, alignment_id, missing="-", sequence_type="nucl
         Character(s) which indicate missing data (e.g., "-?").
     sequence_type : str, optional
         Type of sequence (e.g., nucleotide).
+    tree_data_likelihood_id : str, optional
+        ID of a <treeDataLikelihood> element to register the alignment with (if alignment does not 
+        exist).
         
     Returns
     -------
@@ -118,28 +126,53 @@ def get_alignment_block(xml_root, alignment_id, missing="-", sequence_type="nucl
         {"id": alignment_id, "missing": missing, "dataType": sequence_type}
     )
     
+    # Also create a matching patterns element referencing the alignment
+    patterns = xml_root.makeelement(
+        "patterns", 
+        {"id": f"{alignment_id}.patterns", "from": "1", "strip": "false"}
+    )
+    
+    objectify.SubElement(patterns, "alignment", {"idref": alignment_id})
+    
     # Find the most appropriate place to insert the new alignment block
     taxa = xml_root.find("taxa")
     alignments = xml_root.findall("alignment")
     
     if len(alignments) > 0:
         # Insert below the last existing alignment block
+        alignments[-1].addnext(patterns)
         alignments[-1].addnext(alignment)
     elif taxa is not None:
         # Insert below the <taxa> block
+        taxa.addnext(patterns)
         taxa.addnext(alignment)
     else:
         # XML has no <taxa> or <alignment> blocks yet, so insert as the first element
         xml_root.insert(0, alignment)
+        xml_root.insert(1, patterns)
+    
+    # Register the alignment with the treeDataLikelihood
+    tree_likelihood = xml_root.find(f"treeDataLikelihood[@id='{tree_data_likelihood_id}']")
+    
+    if tree_likelihood is not None:
+        partition = objectify.SubElement(tree_likelihood, "partition")
+        objectify.SubElement(partition, "patterns", {"idref": f"{alignment_id}.patterns"})
+    else:
+        warn(f"Could not find <treeDataLikelihood> element with id '{tree_data_likelihood_id}'. " 
+             f"Newly-created alignment {alignment_id} will not be registered with any "
+             "<treeDataLikelihood>.",
+             RuntimeWarning, stacklevel=2)
     
     return alignment
 
 
-def add_sequence_blocks(xml_root, taxon_id, sequences, missing="-", sequence_type="nucleotide"):
+def add_sequence_blocks(xml_root, taxon_id, sequences, missing="-", sequence_type="nucleotide",
+                        tree_data_likelihood_id="treeLikelihood"):
     """
     Add sequences for a single taxon to the <alignment> block(s) of a BEAST xml. Sequences 
     should be supplied as a dictionary, with keys corresponding to the ids of alignment blocks 
-    in the xml file. If a given alignment block does not exist, it will be created.
+    in the xml file. If a given alignment block does not exist, it will be created and 
+    appropriately registered with the treeModel.
     
     `xml_root` is modified in place.
     
@@ -155,6 +188,9 @@ def add_sequence_blocks(xml_root, taxon_id, sequences, missing="-", sequence_typ
         Character(s) which indicate missing data (e.g., "-?").
     sequence_type : str, optional
         Type of sequence (e.g., nucleotide).
+    tree_data_likelihood_id : str, optional
+        ID of a <treeDataLikelihood> element to which these alignment blocks contribute (only used
+        if the alignment blocks do not already exist)
         
     Returns
     -------
@@ -166,7 +202,8 @@ def add_sequence_blocks(xml_root, taxon_id, sequences, missing="-", sequence_typ
             xml_root, 
             alignment_id,
             missing=missing, 
-            sequence_type=sequence_type
+            sequence_type=sequence_type,
+            tree_data_likelihood_id=tree_data_likelihood_id
         )
                 
         # Check if sequence is compatible with existing alignment

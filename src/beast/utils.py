@@ -8,14 +8,17 @@ def as_decimal_year(date):
     
     Parameters
     ----------
-    date : datetime.date
-        Date to convert.
+    date : str or datetime.date
+        Date to convert. If string, must be in the format "YYYY-MM-DD".
         
     Returns
     -------
     float
         Decimal year.
     """
+    if isinstance(date, str):
+        date = datetime.strptime(date, "%Y-%m-%d")
+    
     year = date.year
     year_start = datetime(year=year, month=1, day=1)
     next_start = datetime(year=year+1, month=1, day=1)
@@ -56,3 +59,29 @@ def set_run_length(xml_root, run_length, n_samples=10000):
     # Update all <logTree> elements:
     for log in mcmc.iterchildren("logTree"):
         log.set("logEvery", str(log_frequency))
+
+
+def extract_partition(alignment, indices):
+    """
+    Extract a partition from an alignment.
+    
+    Parameters
+    ----------
+    alignment : Bio.Align.MultipleSeqAlignment
+        The alignment to extract from.
+    indices : list of int
+        The indices of alignment columns making up this partition.
+        
+    Returns
+    -------
+    Bio.Align.MultipleSeqAlignment
+        The extracted partition.
+    """
+    # Need to use slice notation to get a single column as a MultipleSeqAlignment (and not a string)
+    i = indices[0]
+    partition = alignment[:, i:(i+1)]
+    
+    for i in indices[1:]:
+        partition += alignment[:, i:(i+1)]
+    
+    return partition

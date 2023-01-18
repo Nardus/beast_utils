@@ -3,7 +3,7 @@
 from lxml import objectify
 
 # The tags of the <treeModel> block that specify the starting tree
-TREE_TYPES = ["tree", "upgmaTree"]  # TODO: there may be others
+TREE_TYPES = ["tree", "coalescentTree", "upgmaTree"]
 
 
 def _get_rescaled_tree(xml_root, id="startingTree"):
@@ -125,7 +125,15 @@ def use_upgma(xml_root):
         
     for child in tree_model.iterchildren():
         if child.tag in TREE_TYPES:
-            tree_model.remove(child)
+            if child.get("idref") == tree_spec.get("id"):
+                tree_model.remove(child)
+    
+    # Remove random starting tree if present (these use a different outer tag from tree_spec)
+    tree_id = tree_spec.get("id")
+    random_tree = xml_root.find(f"coalescentSimulator[@id='{tree_id}']")
+    
+    if random_tree is not None:
+        xml_root.remove(random_tree)
     
     # Add a new UPGMA tree specification
     upgma = objectify.SubElement(tree_spec, "upgmaTree")

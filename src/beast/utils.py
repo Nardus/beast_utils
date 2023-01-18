@@ -30,6 +30,35 @@ def as_decimal_year(date):
     return year + fraction
 
 
+def set_value(xml_root, xpath, name, value):
+    """
+    Update or add a single attribute value in an XML file.
+    
+    `xml_root` will be modified in place.
+    
+    Parameters
+    ----------
+    xml_root : lxml.etree.ElementTree.Element
+        The root element of the xml file.
+    xpath : str
+        An xpath query string defining the element to be modified.
+    name : str
+        The attribute name to be updated or added.
+    value : any
+        The value this attribute should be set to.
+    
+    Returns
+    -------
+    None
+    """
+    element = xml_root.find(xpath)
+    
+    if element is None:
+        raise ValueError(f"No match found for xpath query {xpath}.")
+    
+    element.set(name, str(value))
+
+
 def set_run_length(xml_root, run_length, n_samples=10000):
     """
     Update a BEAST xml to run for a given number of MCMC steps, adjusting log frequency to match. 
@@ -39,12 +68,16 @@ def set_run_length(xml_root, run_length, n_samples=10000):
     
     Parameters
     ----------
-    xml_root : xml.etree.ElementTree.Element
+    xml_root : lxml.etree.ElementTree.Element
         The root element of the xml file.
     run_length : int
         The number of MCMC steps required.
     n_samples : int
         The number of samples to take (default: 10 000). This is used to set the log frequency.
+    
+    Returns
+    -------
+    None
     """
     log_frequency = run_length // n_samples
 

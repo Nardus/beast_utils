@@ -84,7 +84,8 @@ def _update_data_type(xml_root, attribute_name):
     for taxon in xml_root.taxa.iterchildren("taxon"):
         attr = taxon.find(f"attr[@name='{attribute_name}']")
         
-        attribute_values.add(attr.text.strip())
+        if attr is not None:
+            attribute_values.add(attr.text.strip())
     
     attribute_values = sorted(attribute_values)
     
@@ -152,7 +153,7 @@ def _update_markov_jumps_tree_likelihood(xml_root, attribute_name, n_states):
         return
     
     # Update overall jump count parameter to match current number of states
-    _update_jump_count_param(params[param_id], attribute_name, n_states)
+    _update_jump_count_param(params[param_id], n_states)
 
 
 def add_taxon_attribute(xml_root, taxon_id, attribute_name, attribute_value, 
@@ -204,25 +205,24 @@ def add_taxon_attribute(xml_root, taxon_id, attribute_name, attribute_value,
         _update_markov_jumps_tree_likelihood(xml_root, attribute_name, n_states)
 
 
-def add_taxon_attributes(xml_path, output_path, attribute_name, attribute_dict):
+def add_taxon_attributes(xml_tree, attribute_name, attribute_dict):
     """
     Add or replace taxon attributes for multiple taxa in a BEAST XML file.
+    
+    `xml_tree` is modified in place.
     
     See `add_taxon_attribute` for more details.
     
     Parameters
     ----------
-    xml_path : str
-        Path to a BEAST xml file.
-    output_path : str
-        Path to use for the output xml file.
+    xml_tree : lxml.etree._ElementTree
+        BEAST xml, parsed using the lxml.objectify parser.
     attribute_name : str
         Name of the attribute (e.g. "location").
     attribute_dict : dict
         Dictionary mapping taxon IDs to attribute values.
     """
-    tree = objectify.parse(xml_path)
-    root = tree.getroot()
+    root = xml_tree.getroot()
     
     for taxon_id, attribute_value in attribute_dict.items():
         add_taxon_attribute(root, taxon_id, attribute_name, attribute_value, 
@@ -233,12 +233,3 @@ def add_taxon_attributes(xml_path, output_path, attribute_name, attribute_dict):
 
     n_states = len(datatype.findall("state"))
     _update_markov_jumps_tree_likelihood(root, attribute_name, n_states)
-    
-    # Save to file
-    with open(output_path, "wb") as f:
-        tree.write(
-            f,
-            pretty_print=True,
-            encoding="utf-8",
-            doctype='<?xml version="1.0" standalone="yes"?>'
-        )

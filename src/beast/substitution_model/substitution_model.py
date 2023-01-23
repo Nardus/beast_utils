@@ -293,6 +293,13 @@ class SubstitutionModel(dict):
         partition = partition.getparent()
         objectify.SubElement(partition, "siteModel", {"idref": f"{self.id_prefix}.siteModel"})
         
+        # Ensure treeDataLikelihood occurs after the siteModel it references
+        xml_root = xml_tree.getroot()
+        siteModel = xml_tree.find(f"/siteModel[@id='{self.id_prefix}.siteModel']")
+        
+        xml_root.remove(tree_likelihood)
+        xml_root.insert(xml_root.index(siteModel) + 1, tree_likelihood)
+        
         return xml_tree
     
     

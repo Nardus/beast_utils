@@ -459,7 +459,7 @@ def add_predictor(xml_root, data,
                              datatype_id, model_id, parameter_prefix, 
                              log_transform, standardise, update_prior)
                              
-    elif (data.shape[0] == data.shape[1] + 1) or (data.shape[1] == 2):
+    elif (data.shape[1] == data.shape[0] + 1) or (data.shape[1] == 2):
         warn("Data has an unexpected shape. Assuming first column is a list of observed states.",
              stacklevel=2, category=RuntimeWarning)
         

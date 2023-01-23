@@ -139,7 +139,7 @@ def _parse_rate_variation(gamma_string):
     if gamma_string.startswith("R"):
         warn("Selected model uses the FreeRate generalisation, which is not supported by "
              "BEAST. Using Gamma-distributed rates instead.",
-             stacklevel=3)
+             RuntimeWarning, stacklevel=4)
     
     if gamma_string == "G" or gamma_string == "R":
         # Assume 4 categories when not specified

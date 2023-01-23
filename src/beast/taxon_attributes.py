@@ -156,6 +156,51 @@ def _update_markov_jumps_tree_likelihood(xml_root, attribute_name, n_states):
     _update_jump_count_param(params[param_id], n_states)
 
 
+def _update_glm_frequencies(xml_root, attribute_name, n_states):
+    """
+    Update the <frequencies> parameter of a <glmSubstitutionModel> block in a BEAST xml file (if
+    present). This function will update the "{attribute_name}.frequencies" parameter to reflect the
+    number of states in the XML.
+    
+    `xml_root` is modified in place.
+    
+    Parameters
+    ----------
+    xml_root : lxml.objectify.ObjectifiedElement
+        Root of a BEAST xml, parsed using the lxml.objectify parser.
+    attribute_name : str
+        Name of an attribute (e.g. "location").
+    n_states : int
+        Number of unique states observed for this attribute.
+    
+    Returns
+    -------
+    None
+    """
+    # Expected names
+    model_id = f"{attribute_name}.model"
+    param_id = f"{attribute_name}.frequencies"
+    
+    # Find the relevant <glmSubstitutionModel> block
+    model = xml_root.find(f"glmSubstitutionModel[@id='{model_id}']")
+    
+    if model is None:
+        warn(f"No glmSubstitutionModel block with ID {model_id} found. Skipping update.",
+             stacklevel=3, category=RuntimeWarning)
+        return
+        
+    # Find frequencies parameter
+    frequency_param = model.find(
+        f"rootFrequencies/frequencyModel/frequencies/parameter[@id='{param_id}']"
+    )
+    
+    if frequency_param is None:
+        raise ValueError(f"glmSubstitutionModel with id {model_id} has no '{param_id}' parameter.")
+    
+    # Update frequencies parameter to match current number of states
+    frequency_param.set("dimension", str(n_states))
+
+
 def add_taxon_attribute(xml_root, taxon_id, attribute_name, attribute_value, 
                         update_other_blocks=True):
     """
@@ -203,6 +248,7 @@ def add_taxon_attribute(xml_root, taxon_id, attribute_name, attribute_value,
         
         n_states = len(datatype.findall("state"))
         _update_markov_jumps_tree_likelihood(xml_root, attribute_name, n_states)
+        _update_glm_frequencies(xml_root, attribute_name, n_states)
 
 
 def add_taxon_attributes(xml_tree, attribute_name, attribute_dict):
@@ -233,3 +279,4 @@ def add_taxon_attributes(xml_tree, attribute_name, attribute_dict):
 
     n_states = len(datatype.findall("state"))
     _update_markov_jumps_tree_likelihood(root, attribute_name, n_states)
+    _update_glm_frequencies(root, attribute_name, n_states)

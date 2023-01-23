@@ -213,12 +213,6 @@ def _insert_predictor(name, values, model_spec, log, standardise, update_prior):
     else:
         objectify.SubElement(design_matrix, "parameter", {"id": name, "value": values})
     
-    # Update number of predictors
-    predictor_count = design_matrix.countchildren()
-    
-    count_block = model_spec.rootFrequencies.frequencyModel.frequencies.parameter
-    count_block.set("value", str(predictor_count))
-    
     # Update prior
     if update_prior:
         # Get indicator id
@@ -239,6 +233,7 @@ def _insert_predictor(name, values, model_spec, log, standardise, update_prior):
             
         # Set value
         # (calculation from https://github.com/beast-dev/beast-mcmc/blob/cf3d7370ca/src/dr/app/beauti/components/discrete/DiscreteTraitsComponentGenerator.java#L601)
+        predictor_count = design_matrix.countchildren()
         proportion = 1 - np.exp( np.log(0.5) / predictor_count )
         inclusion_prior.proportion.parameter.set("value", str(proportion))
 

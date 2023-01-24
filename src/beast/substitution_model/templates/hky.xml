@@ -39,7 +39,7 @@
     <mcmc id="mcmc">
         <joint id="joint">
             <prior id="prior">
-                <logNormalPrior mu="1.0" sigma="1.25" offset="0.0" meanInRealSpace="false">
+                <logNormalPrior mean="1.0" stdev="1.25" offset="0.0" meanInRealSpace="false">
                     <parameter idref="kappa"/>
                 </logNormalPrior>
                 <dirichletPrior alpha="1.0" sumsTo="1.0">

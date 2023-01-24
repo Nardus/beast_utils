@@ -88,7 +88,7 @@
             <parameter idref="gtr.at"/>
             <parameter idref="gtr.cg"/>
             <parameter idref="gtr.gt"/>
-            <parameter idref="gtr.frequencies"/>
+            <parameter idref="frequencies"/>
         </log>
     </mcmc>
 

@@ -128,6 +128,10 @@ class SubstitutionModel(dict):
         -------
         None
         """
+        # Don't double prefix bare (e.g. "codon3"), which refers to the alignment
+        protected_ids.append(self.id_prefix)
+        
+        # Update recursively
         if isinstance(model_tree, etree._ElementTree):
             # Top level call (i.e. no recursion yet)
             self.id_prefix = name_prefix
@@ -189,11 +193,17 @@ class SubstitutionModel(dict):
         if self.frequencies in ["equal", "estimated"]:
             # Set initial values for frequencies
             freq_param.attrib["value"] = "0.25 0.25 0.25 0.25"
+            
+            if "dimension" in freq_param.attrib:
+                freq_param.attrib.pop("dimension")
         else:
             # Don't set initial values for frequencies, forcing BEAST to get it from the data
             # during initialisation
             if "value" in freq_param.attrib:
                 freq_param.attrib.pop("value")
+                
+            # Set dimension instead
+            freq_param.attrib["dimension"] = "4"
         
         # For empirical frequencies, also need a reference to the source alignment
         alignment = model_tree.find("/*/frequencies/frequencyModel/alignment")
@@ -214,11 +224,13 @@ class SubstitutionModel(dict):
         # Operators
         if self.frequencies in ["equal", "empirical"]:
             # Ensure there's no operator modifying frequencies after initialisation
-            operators = model_tree.find("operators/*/parameter[@idref='frequencies']")
+            operator_params = model_tree.iterfind("operators/*/parameter[@idref='frequencies']")
             
-            if operators is not None:
-                for op in operators:
-                    op.getparent().remove(op)
+            if operator_params is not None:
+                for op in operator_params:
+                    # Remove entire operator, not just the <parameter> enclosed by it
+                    operator = op.getparent()
+                    operator.getparent().remove(operator)
         else:
             # Insert everything required to estimate frequencies during MCMC
             self._update_from_internal_template(model_tree, self.modifiers["estimated"])

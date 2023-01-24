@@ -62,7 +62,7 @@ def update_from_template(tree, template, before_operators=True):
     elements will cannot be changed. 
     
     To allow identification of existing parent elements, only the tag name and id attribute are 
-    needed (e.g. `<operators id="operators">`). If the id attribute is not present, a new element. 
+    needed (e.g. `<operators id="operators">`). If the id attribute is not present, a new element 
     will be created even if the tag already exists. The outer `<beast>` tag should include the
     version attribute (e.g. `<beast version="1.10.4">`), and this must match between the template
     and the XML to be updated.

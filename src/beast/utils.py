@@ -79,6 +79,9 @@ def set_run_length(xml_root, run_length, n_samples=10000):
     -------
     None
     """
+    run_length = int(run_length)
+    n_samples = int(n_samples)
+    
     log_frequency = run_length // n_samples
 
     # Update <mcmc> element:
@@ -92,6 +95,45 @@ def set_run_length(xml_root, run_length, n_samples=10000):
     # Update all <logTree> elements:
     for log in mcmc.iterchildren("logTree"):
         log.set("logEvery", str(log_frequency))
+
+
+def set_output_prefix(xml_root, prefix):
+    """
+    Update a BEAST xml by appending a prefix to all log file names.
+    
+    `xml_root` will be modified in-place.
+    
+    Parameters
+    ----------
+    xml_root : lxml.etree.ElementTree.Element
+        The root element of the xml file.
+    prefix : str
+        A prefix to add to all log file names.
+    
+    Returns
+    -------
+    None
+    """
+    # Update <mcmc> element:
+    mcmc = xml_root.mcmc
+    operators_file = mcmc.get("operatorAnalysis")
+    
+    if operators_file is not None:
+        mcmc.set("operatorAnalysis", f"{prefix}.{operators_file}")
+
+    # Update all <log> elements:
+    for log in mcmc.iterchildren("log"):
+        cur_name = log.get("fileName")
+        
+        if cur_name is not None:
+            log.set("fileName", f"{prefix}.{cur_name}")
+
+    # Update all <logTree> elements:
+    for log in mcmc.iterchildren("logTree"):
+        cur_name = log.get("fileName")
+        
+        if cur_name is not None:
+            log.set("fileName", f"{prefix}.{cur_name}")
 
 
 def extract_partition(alignment, indices):

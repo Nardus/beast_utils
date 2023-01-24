@@ -3,14 +3,14 @@
 <beast version="1.10.4">
     <siteModel id="siteModel">
         <proportionInvariant>
-            <parameter id="siteModel.pInv" value="0.25" lower="0.0"/>
+            <parameter id="siteModel.pInv" value="0.5" lower="0.0" upper="1.0"/>
         </proportionInvariant>
     </siteModel>
     
     <operators id="operators">
-        <scaleOperator scaleFactor="0.75" weight="0.1">
+        <randomWalkOperator windowSize="0.75" weight="1" boundaryCondition="logit">
             <parameter idref="siteModel.pInv"/>
-        </scaleOperator>
+        </randomWalkOperator>
     </operators>
     
     <mcmc id="mcmc">

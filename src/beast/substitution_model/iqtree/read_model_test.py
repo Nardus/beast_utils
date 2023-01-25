@@ -1,6 +1,7 @@
 # Parse IQ-TREE model and partition specifications
 
 from warnings import warn
+from re import split
 
 from ..substitution_model import SubstitutionModel
 
@@ -21,7 +22,7 @@ def _parse_partition_string(partition_string):
         The indices of alignment columns included in the partition.
     """
     # Parse components
-    components = partition_string.split(" ")
+    components = split("[ ]+", partition_string)
     indices = []
     
     for component in components:
@@ -257,8 +258,7 @@ def read_model_test(path):
 
                     partitions[name] = _parse_partition_string(definition)
                 else:
-                    warn(
-                        f"Invalid line in partition definitions ignored: {line}")
+                    warn(f"Invalid line in partition definitions ignored: {line}")
 
             elif in_model_block:
                 model, name = line.split(":")

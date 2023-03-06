@@ -219,7 +219,7 @@ def add_sequence_blocks(xml_root, taxon_id, sequences, missing="-", sequence_typ
         # Add sequence
         sequence_block = objectify.SubElement(alignment, "sequence")
         taxon_ref = objectify.SubElement(sequence_block, "taxon", {"idref": taxon_id})
-        taxon_ref.tail = sequence  # Ensures that sequence follows taxon reference
+        taxon_ref.tail = sequence.upper()  # Ensures that sequence follows taxon reference
 
 
 def add_taxon(xml_root, taxon_id, date, sequences, missing="-",

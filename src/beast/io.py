@@ -17,7 +17,7 @@ def from_string(string):
     lxml.etree.ElementTree
         The xml tree.
     """
-    parser = objectify.makeparser(remove_blank_text=True)
+    parser = objectify.makeparser(remove_blank_text=True, remove_comments=True)
     root = objectify.fromstring(string, parser=parser)
     return ElementTree(root)
 

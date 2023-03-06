@@ -221,7 +221,7 @@ class SubstitutionModel(dict):
                 alignment.getparent().remove(alignment)
             
         
-        # Operators
+        # Operators and priors
         if self.frequencies in ["equal", "empirical"]:
             # Ensure there's no operator modifying frequencies after initialisation
             operator_params = model_tree.iterfind("operators/*/parameter[@idref='frequencies']")
@@ -231,6 +231,15 @@ class SubstitutionModel(dict):
                     # Remove entire operator, not just the <parameter> enclosed by it
                     operator = op.getparent()
                     operator.getparent().remove(operator)
+            
+            # Remove prior on frequencies (if present)
+            prior_params = model_tree.iterfind("mcmc/joint/prior/*/parameter[@idref='frequencies']")
+            
+            if prior_params is not None:
+                for pp in prior_params:
+                    prior = pp.getparent()
+                    prior.getparent().remove(prior)
+            
         else:
             # Insert everything required to estimate frequencies during MCMC
             self._update_from_internal_template(model_tree, self.modifiers["estimated"])

@@ -247,6 +247,192 @@ class SubstitutionModel(dict):
         return None
     
     
+    def _get_partition_sizes(self, xml_tree):
+        """
+        Get the number of partition characters associated with each siteModel in xml_tree.
+        
+        Parameters
+        ----------
+        xml_tree : lxml.etree.ElementTree
+            The substitution model XML tree.
+        
+        Returns
+        -------
+        dict
+            A dictionary mapping site model ids to the number of partition characters.
+        """
+        # Get the alignment linked to each site model
+        # - treeDataLikelihood links site models to patterns, which in turn points to alignments
+        # - since partitions are added separately from (and before) models, some partitions may 
+        #   not have site models yet - only including those that do (implying the substitution 
+        #   model has been added already)
+        alignment_names = {}
+        
+        for partition in xml_tree.findall("/treeDataLikelihood/partition"):
+            siteModel = partition.find("siteModel")
+            
+            if siteModel is not None:
+                sitemodel_id = siteModel.get("idref")
+                pattern_id = partition.find("patterns").get("idref")
+
+                patterns = xml_tree.find(f"/patterns[@id='{pattern_id}']")
+                alignment_id = patterns.find("alignment").get("idref")
+
+                alignment_names[sitemodel_id] = alignment_id
+
+        # Get the number of characters in each alignment
+        alignment_sites = {}
+
+        for sitemodel_id, alignment_id in alignment_names.items():
+            alignment = xml_tree.find(f"/alignment[@id='{alignment_id}']")
+
+            first_seq_element = alignment.getchildren()[0]
+            first_sequence = first_seq_element.getchildren()[-1].tail
+            first_sequence = first_sequence.lstrip().rstrip()
+
+            alignment_sites[sitemodel_id] = len(first_sequence)
+        
+        return alignment_sites
+    
+    
+    def _convert_mu_to_nu(self, xml_tree, sitemodel_id, n_partitions):
+        """
+        Convert a siteModel's relative rate parameters to the nu-based representation.
+        
+        If the relative rate parameter does not in ".mu", no action is taken.
+        
+        Parameters
+        ----------
+        xml_tree : lxml.etree.ElementTree
+            The XML tree to modify.
+        sitemodel_id : str
+            The ID parameter of siteModel in xml_tree.
+        n_partitions : int
+            Number of partitions present in this XML.
+        
+        Returns
+        -------
+        str
+            The name of the nu param (or the original parameter name if no action was taken).
+        """
+        xml_root = xml_tree.getroot()
+        
+        sitemodel = xml_tree.find(f"/siteModel[@id='{sitemodel_id}']")
+        relative_rate = sitemodel.find("relativeRate")
+
+        # Only update if needed
+        parameter = relative_rate.find("parameter")
+        old_id = parameter.get("id")
+        
+        if old_id.endswith(".mu"):
+            # Replace mu parameter with nu
+            new_id = f"{sitemodel_id}.nu"
+            parameter.set("id", new_id)
+            parameter.set("value", str(1 / n_partitions))
+            parameter.set("lower", "0.0")
+            parameter.set("upper", "1.0")
+
+            # Calculate mu statistic from nu
+            mu_statistic = xml_root.makeelement("statistic", {"id": old_id, "name": "mu"})
+            objectify.SubElement(mu_statistic, "siteModel", idref=sitemodel_id)
+            xml_root.insert(xml_root.index(sitemodel) + 1, mu_statistic)
+            
+            # Log both parameters
+            log = xml_tree.find("/mcmc/log[@id='fileLog']")
+            old_mu_log = log.find(f"parameter[@idref='{old_id}']")
+            
+            if old_mu_log is not None:
+                log.remove(old_mu_log)
+            
+            objectify.SubElement(log, "statistic", {"idref": old_id})
+            objectify.SubElement(log, "parameter", {"idref": new_id})
+            
+            return new_id
+            
+        else:
+            return old_id
+    
+    
+    def _update_site_model_relative_rates(self, xml_tree):
+        """
+        Update all site model relative rate parameters, using the new per-partition
+        ("nu") parameterization with a Dirchlet prior.
+        
+        xml_tree is modified in place.
+        
+        Parameters
+        ----------
+        xml_tree : lxml.etree.ElementTree
+            The XML tree to modify.
+        
+        Returns
+        -------
+        None
+        """
+        xml_root = xml_tree.getroot()
+        alignment_sites = self._get_partition_sizes(xml_tree)
+        
+        # No need for relative rates if there's only one partition
+        n_partitions = len(alignment_sites)
+        
+        if n_partitions == 1:
+            return None
+        
+        # Modify all sequence-related site models to reflect the current number of 
+        # relative rate params
+        total_sites = sum(alignment_sites.values())
+        nu_ids = []
+        
+        for sitemodel_id, cur_sites in alignment_sites.items():
+            # Convert to nu-based representation if needed
+            id = self._convert_mu_to_nu(xml_tree, sitemodel_id, n_partitions)
+            nu_ids.append(id)
+            
+            # Set weight relative to partition size
+            rel_weight = total_sites / cur_sites
+            
+            sitemodel = xml_tree.find(f"/siteModel[@id='{sitemodel_id}']")
+            relative_rate = sitemodel.find("relativeRate")
+            relative_rate.set("weight", str(rel_weight))
+            
+        # Add the "allNus" compound parameter if needed      
+        compound_param = xml_tree.find("/compoundParameter[@id='allNus']")
+        
+        if compound_param is None:
+            compound_param = xml_root.makeelement("compoundParameter", {"id": "allNus"})
+            
+            # Insert before the tree likelihood
+            tree_likelihood = xml_tree.find("treeDataLikelihood")
+            xml_root.insert(xml_root.index(tree_likelihood) - 1, compound_param)
+            
+            # Add to log
+            log = xml_tree.find("/mcmc/log[@id='fileLog']")
+            objectify.SubElement(log, "compoundParameter", {"idref": "allNus"})
+        
+        # Add any missing nu parameters to allNus
+        known_nus = [c.get("idref") for c in compound_param.getchildren()]
+        add_nus = set(nu_ids) - set(known_nus)
+        
+        for nu in add_nus:
+            objectify.SubElement(compound_param, "parameter", idref=nu)
+        
+        # Add operator
+        nu_operator = xml_tree.find("/operators/*/parameter[@idref='allNus']")
+        
+        if nu_operator is None:
+            operators = xml_tree.find("/operators")
+            op = objectify.SubElement(operators, "deltaExchange", delta="0.01", weight="3")
+            objectify.SubElement(op, "parameter", idref="allNus")
+            
+        # Add prior
+        nu_prior = xml_tree.find("/mcmc/joint/prior/*/parameter[@idref='allNus']")
+        
+        if nu_prior is None:
+            priors = xml_tree.find("/mcmc/joint/prior")
+            pr = objectify.SubElement(priors, "dirichletPrior", alpha="1.0", sumsTo="1.0")
+            objectify.SubElement(pr, "parameter", idref="allNus")
+    
+    
     def build_xml(self):
         """
         Build an XML representation of this substitution model.
@@ -277,7 +463,8 @@ class SubstitutionModel(dict):
         
         return base_tree
         
-    def insert_xml(self, xml_tree, tree_data_likelihood_id="treeLikelihood"):
+    def insert_xml(self, xml_tree, tree_data_likelihood_id="treeLikelihood", 
+                   new_parameterization=False):
         """
         Insert the XML representation of this substitution model into an existing XML tree.
         
@@ -287,6 +474,9 @@ class SubstitutionModel(dict):
             The existing XML tree.
         tree_data_likelihood_id : str, optional
             The id of the <treeDataLikelihood> element to register the model with.
+        new_parameterization : bool, optional
+            If True, use the new relative rate parameterization introduced in BEAST 1.10
+            (see https://groups.google.com/g/beast-users/c/FWN7lGJ75Wk/m/YQEhZx4HAwAJ).
         
         Returns
         -------
@@ -320,6 +510,10 @@ class SubstitutionModel(dict):
         
         xml_root.remove(tree_likelihood)
         xml_root.insert(xml_root.index(siteModel) + 1, tree_likelihood)
+        
+        # Update relative rate parameters
+        if new_parameterization:
+            self._update_site_model_relative_rates(xml_tree)
         
         return xml_tree
     

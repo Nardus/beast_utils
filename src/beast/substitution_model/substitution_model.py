@@ -405,7 +405,8 @@ class SubstitutionModel(dict):
         
         for nu_param in nu_elements:
             # Initial values should sum to 1 across all nu paramaters (see prior below)
-            nu_param.set("value", 1.0 / len(nu_ids))
+            nu_val = 1.0 / len(nu_ids)
+            nu_param.set("value", str(nu_val))
             
         # Add the "allNus" compound parameter if needed      
         compound_param = xml_tree.find("/compoundParameter[@id='allNus']")

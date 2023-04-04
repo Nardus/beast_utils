@@ -326,9 +326,12 @@ class SubstitutionModel(dict):
         
         if old_id.endswith(".mu"):
             # Replace mu parameter with nu
+            # ("value" is intially set to 1.0, but will be modified by below (by 
+            #  _update_site_model_relative_rates() if more than one substitution model uses the 
+            #  nu-based representation)
             new_id = f"{sitemodel_id}.nu"
             parameter.set("id", new_id)
-            parameter.set("value", str(1 / n_partitions))
+            parameter.set("value", "1.0")
             parameter.set("lower", "0.0")
             parameter.set("upper", "1.0")
 
@@ -382,6 +385,7 @@ class SubstitutionModel(dict):
         # relative rate params
         total_sites = sum(alignment_sites.values())
         nu_ids = []
+        nu_elements = []
         
         for sitemodel_id, cur_sites in alignment_sites.items():
             # Convert to nu-based representation if needed
@@ -394,6 +398,14 @@ class SubstitutionModel(dict):
             sitemodel = xml_tree.find(f"/siteModel[@id='{sitemodel_id}']")
             relative_rate = sitemodel.find("relativeRate")
             relative_rate.set("weight", str(rel_weight))
+            
+            # Collect nu parameter elements for modification below
+            nu_param = relative_rate.find(f"parameter[@id={id}")
+            nu_elements.append(nu_param)
+        
+        for nu_param in nu_elements:
+            # Initial values should sum to 1 across all nu paramaters (see prior below)
+            nu_param.set("value", 1.0 / len(nu_ids))
             
         # Add the "allNus" compound parameter if needed      
         compound_param = xml_tree.find("/compoundParameter[@id='allNus']")

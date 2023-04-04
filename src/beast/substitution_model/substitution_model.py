@@ -400,7 +400,7 @@ class SubstitutionModel(dict):
             relative_rate.set("weight", str(rel_weight))
             
             # Collect nu parameter elements for modification below
-            nu_param = relative_rate.find(f"parameter[@id={id}")
+            nu_param = relative_rate.find(f"parameter[@id='{id}'")
             nu_elements.append(nu_param)
         
         for nu_param in nu_elements:

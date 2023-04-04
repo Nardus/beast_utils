@@ -408,6 +408,13 @@ class SubstitutionModel(dict):
             # Add to log
             log = xml_tree.find("/mcmc/log[@id='fileLog']")
             objectify.SubElement(log, "compoundParameter", {"idref": "allNus"})
+        else:
+            # Move to immediately before the tree likelihood (ensuring the compound parameter
+            # block still occurs after any newly-added substitution models)
+            tree_likelihood = xml_tree.find("treeDataLikelihood")
+            xml_root.remove(compound_param)
+            xml_root.insert(xml_root.index(tree_likelihood) - 1, compound_param)
+            
         
         # Add any missing nu parameters to allNus
         known_nus = [c.get("idref") for c in compound_param.getchildren()]

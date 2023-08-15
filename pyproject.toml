@@ -1,11 +1,10 @@
 [tool.poetry]
-name = "beast-utils"
+name = "beast_utils"
 version = "0.1.0"
 description = "Generate and manipulate BEAST XML files."
 authors = ["Nardus Mollentze <nardus.mollentze@glasgow.ac.uk>"]
 license = "GPL-3.0-only"
 readme = "README.md"
-packages = [{include = "beast_utils"}]
 classifiers = [
     "Programming Language :: Python :: 3",
     "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",

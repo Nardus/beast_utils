@@ -1,0 +1,22 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "beast_utils"
+version = "0.0.1"
+authors = [
+  { name="Nardus Mollentze", email="nardus.mollentze@glasgow.ac.uk" },
+]
+description = "Generate and manipulate BEAST XML files."
+readme = "README.md"
+requires-python = ">=3.9"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
+    "Operating System :: OS Independent",
+]
+
+[project.urls]
+"Homepage" = "https://github.com/nardus/samplepbeast_utilsroject"
+"Bug Tracker" = "https://github.com/nardus/beast_utils/issues"

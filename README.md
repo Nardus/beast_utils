@@ -6,9 +6,9 @@ This library provides an API allowing programmatic generation of BEAST XML files
 
 Key features currently implemented are:
 - Merge arbitrary XML templates, allowing complex analyses to be specified in a more modular fashion
-- Insert or update sequence data, dates, and traits, including complex partition schemes
+- Insert or update sequence data, dates, and traits, including complex partitioning schemes
+- Parse IQ-Tree result files to find the appropriate partitioning scheme and substitution models
 - Insert or update substitution models
-- Parse IQ-Tree result files to find the appropriate substitution scheme and substitution models
 - Insert or modify the starting tree specification
 - Update parameters which depend on data (e.g. matrix dimensions), in most cases automatically
 - Add various phylogeography-related blocks to an XML:

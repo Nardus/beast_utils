@@ -97,6 +97,49 @@ def set_run_length(xml_root, run_length, n_samples=10000):
         log.set("logEvery", str(log_frequency))
 
 
+def set_output_name(xml_root, stem):
+    """
+    Update a BEAST xml by completely replacing all log file names (apart from the extensions).
+    
+    `xml_root` will be modified in-place.
+    
+    Parameters
+    ----------
+    xml_root : lxml.etree.ElementTree.Element
+        The root element of the xml file.
+    stem : str
+        The file name stem to use for all log files. For example, if `stem` is "chain1", the
+        log file names will be "chain1.log", "chain1.trees", etc.
+    
+    Returns
+    -------
+    None
+    """
+    # Update <mcmc> element:
+    mcmc = xml_root.mcmc
+    operators_file = mcmc.get("operatorAnalysis")
+
+    if operators_file is not None:
+        operators_extension = operators_file.split(".")[-1]
+        mcmc.set("operatorAnalysis", f"{stem}.{operators_extension}")
+
+    # Update all <log> elements:
+    for log in mcmc.iterchildren("log"):
+        cur_name = log.get("fileName")
+
+        if cur_name is not None:
+            cur_extension = cur_name.split(".")[-1]
+            log.set("fileName", f"{stem}.{cur_extension}")
+
+    # Update all <logTree> elements:
+    for log in mcmc.iterchildren("logTree"):
+        cur_name = log.get("fileName")
+
+        if cur_name is not None:
+            cur_extension = cur_name.split(".")[-1]
+            log.set("fileName", f"{stem}.{cur_extension}")
+
+
 def set_output_prefix(xml_root, prefix):
     """
     Update a BEAST xml by appending a prefix to all log file names.

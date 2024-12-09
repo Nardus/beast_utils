@@ -97,6 +97,42 @@ def _get_alignment_id(xml_root):
     return alignment.get("id")
 
 
+def _remove_tree_specification(xml_root, tree_spec, tree_model):
+    """
+    Remove any existing starting tree specification from a BEAST xml file.
+    
+    `xml_root` will be modified in-place.
+    
+    Parameters
+    ----------
+    xml_root : xml.etree.ElementTree.Element
+        The root element of the xml file.
+    tree_spec : xml.etree.ElementTree.Element
+        The <rescaledTree> element to remove the specification from.
+    tree_model : xml.etree.ElementTree.Element
+        The <treeModel> element to remove the specification from.
+    
+    Returns
+    -------
+    None
+    """
+    # Remove any existing starting tree specification
+    for child in tree_spec.iterchildren():
+        tree_spec.remove(child)
+
+    for child in tree_model.iterchildren():
+        if child.tag in TREE_TYPES:
+            if child.get("idref") == tree_spec.get("id"):
+                tree_model.remove(child)
+
+    # Remove random starting tree if present (these use a different outer tag from tree_spec)
+    tree_id = tree_spec.get("id")
+    random_tree = xml_root.find(f"coalescentSimulator[@id='{tree_id}']")
+
+    if random_tree is not None:
+        xml_root.remove(random_tree)
+
+
 # Use a UPGMA tree as the starting tree
 def use_upgma(xml_root):
     """
@@ -120,20 +156,7 @@ def use_upgma(xml_root):
     alignment_id = _get_alignment_id(xml_root)
     
     # Remove any existing starting tree specification
-    for child in tree_spec.iterchildren():
-        tree_spec.remove(child)
-        
-    for child in tree_model.iterchildren():
-        if child.tag in TREE_TYPES:
-            if child.get("idref") == tree_spec.get("id"):
-                tree_model.remove(child)
-    
-    # Remove random starting tree if present (these use a different outer tag from tree_spec)
-    tree_id = tree_spec.get("id")
-    random_tree = xml_root.find(f"coalescentSimulator[@id='{tree_id}']")
-    
-    if random_tree is not None:
-        xml_root.remove(random_tree)
+    _remove_tree_specification(xml_root, tree_spec, tree_model)
     
     # Add a new UPGMA tree specification
     upgma = objectify.SubElement(tree_spec, "upgmaTree")
@@ -169,12 +192,7 @@ def use_tree(xml_root, newick_tree):
     tree_model = _get_tree_model(xml_root)
     
     # Remove any existing starting tree specification
-    for child in tree_spec.iterchildren():
-        tree_spec.remove(child)
-        
-    for child in tree_model.iterchildren():
-        if child.tag in TREE_TYPES:
-            tree_model.remove(child)
+    _remove_tree_specification(xml_root, tree_spec, tree_model)
     
     # Add a new tree specification
     newick = objectify.SubElement(tree_spec, "newick", {"usingDates": "true"})

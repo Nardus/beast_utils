@@ -25,3 +25,7 @@ Key features currently implemented are:
 ```
 pip install git+https://github.com/nardus/beast_utils.git
 ```
+
+
+## History
+This library was originally developed as part of a [rabies spatial expansion project](https://github.com/Nardus/rabies_invasion/). To view earlier versions, see [here](https://github.com/Nardus/rabies_invasion/tree/37b448bf5630de574df349f2e1270810b177fd6a/src/beast).
